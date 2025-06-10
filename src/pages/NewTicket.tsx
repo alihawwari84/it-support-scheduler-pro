@@ -7,9 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, CalendarIcon, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const NewTicket = () => {
   const navigate = useNavigate();
@@ -21,13 +25,20 @@ const NewTicket = () => {
     description: "",
     priority: "",
     type: "",
-    estimatedTime: ""
+    estimatedTime: "",
+    scheduledDate: undefined as Date | undefined,
+    scheduledTime: ""
   });
 
   const companies = ["UCS", "EMCC", "Praxis", "Flucon", "Dudin", "FNCS", "Exclusive", "Injaz"];
   const priorities = ["low", "medium", "high"];
   const types = ["Network", "Email", "Software", "Hardware", "Maintenance", "Setup"];
   const timeEstimates = ["30 minutes", "1 hour", "1.5 hours", "2 hours", "3 hours", "Half day", "Full day"];
+  const timeSlots = [
+    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
+    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
+    "15:00", "15:30", "16:00", "16:30", "17:00"
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +53,31 @@ const NewTicket = () => {
       return;
     }
 
-    // Here you would typically save to a database
-    console.log("New ticket created:", formData);
+    // Create new ticket object
+    const newTicket = {
+      id: Date.now(), // Simple ID generation
+      company: formData.company,
+      title: formData.title,
+      description: formData.description,
+      priority: formData.priority,
+      status: "pending",
+      type: formData.type,
+      createdAt: new Date().toLocaleString(),
+      estimatedTime: formData.estimatedTime || "Not specified",
+      scheduledDate: formData.scheduledDate ? format(formData.scheduledDate, "yyyy-MM-dd") : null,
+      scheduledTime: formData.scheduledTime || null
+    };
+
+    // Get existing tickets from localStorage
+    const existingTickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    
+    // Add new ticket
+    const updatedTickets = [newTicket, ...existingTickets];
+    
+    // Save to localStorage
+    localStorage.setItem('tickets', JSON.stringify(updatedTickets));
+
+    console.log("New ticket created and saved:", newTicket);
     
     toast({
       title: "Ticket Created",
@@ -54,7 +88,7 @@ const NewTicket = () => {
     navigate("/tickets");
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | Date | undefined) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -172,6 +206,56 @@ const NewTicket = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Scheduled Date and Time */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Scheduled Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.scheduledDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.scheduledDate ? format(formData.scheduledDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.scheduledDate}
+                        onSelect={(date) => handleInputChange("scheduledDate", date)}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledTime">Scheduled Time</Label>
+                  <Select value={formData.scheduledTime} onValueChange={(value) => handleInputChange("scheduledTime", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map(time => (
+                        <SelectItem key={time} value={time}>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            {time}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Submit Button */}

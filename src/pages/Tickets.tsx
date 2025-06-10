@@ -1,77 +1,60 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, FileText, Users } from "lucide-react";
+import { Clock, FileText, Users, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Tickets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
+  const [tickets, setTickets] = useState([]);
 
   const companies = ["UCS", "EMCC", "Praxis", "Flucon", "Dudin", "FNCS", "Exclusive", "Injaz"];
 
-  const tickets = [
-    {
-      id: 1,
-      company: "UCS",
-      title: "Network connectivity issues",
-      description: "Users unable to access shared drives",
-      priority: "high",
-      status: "pending",
-      type: "Network",
-      createdAt: "2024-06-10 09:30",
-      estimatedTime: "2 hours"
-    },
-    {
-      id: 2,
-      company: "EMCC",
-      title: "Email configuration",
-      description: "New employee needs Outlook setup",
-      priority: "medium",
-      status: "in-progress",
-      type: "Email",
-      createdAt: "2024-06-10 08:15",
-      estimatedTime: "1 hour"
-    },
-    {
-      id: 3,
-      company: "Praxis",
-      title: "Software installation",
-      description: "Install AutoCAD on 3 workstations",
-      priority: "medium",
-      status: "scheduled",
-      type: "Software",
-      createdAt: "2024-06-09 16:45",
-      estimatedTime: "3 hours"
-    },
-    {
-      id: 4,
-      company: "Flucon",
-      title: "Printer connectivity",
-      description: "Office printer not responding",
-      priority: "low",
-      status: "resolved",
-      type: "Hardware",
-      createdAt: "2024-06-09 14:20",
-      estimatedTime: "30 minutes"
-    },
-    {
-      id: 5,
-      company: "Injaz",
-      title: "System backup verification",
-      description: "Monthly backup system check",
-      priority: "medium",
-      status: "pending",
-      type: "Maintenance",
-      createdAt: "2024-06-10 10:00",
-      estimatedTime: "1.5 hours"
+  // Load tickets from localStorage on component mount
+  useEffect(() => {
+    const savedTickets = localStorage.getItem('tickets');
+    if (savedTickets) {
+      setTickets(JSON.parse(savedTickets));
+    } else {
+      // Set default tickets if none exist
+      const defaultTickets = [
+        {
+          id: 1,
+          company: "UCS",
+          title: "Network connectivity issues",
+          description: "Users unable to access shared drives",
+          priority: "high",
+          status: "pending",
+          type: "Network",
+          createdAt: "2024-06-10 09:30",
+          estimatedTime: "2 hours",
+          scheduledDate: null,
+          scheduledTime: null
+        },
+        {
+          id: 2,
+          company: "EMCC",
+          title: "Email configuration",
+          description: "New employee needs Outlook setup",
+          priority: "medium",
+          status: "in-progress",
+          type: "Email",
+          createdAt: "2024-06-10 08:15",
+          estimatedTime: "1 hour",
+          scheduledDate: null,
+          scheduledTime: null
+        }
+      ];
+      setTickets(defaultTickets);
+      localStorage.setItem('tickets', JSON.stringify(defaultTickets));
     }
-  ];
+  }, []);
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -204,6 +187,12 @@ const Tickets = () => {
                         <Clock className="h-4 w-4" />
                         <span>Est. {ticket.estimatedTime}</span>
                       </div>
+                      {ticket.scheduledDate && ticket.scheduledTime && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{ticket.scheduledDate} at {ticket.scheduledTime}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
