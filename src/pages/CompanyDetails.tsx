@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 interface Company {
-  id: number;
+  id: number | string;
   name: string;
   contact: string;
   phone: string;
@@ -39,12 +39,10 @@ const CompanyDetails = () => {
   const [company, setCompany] = useState<Company | null>(null);
   const [calculatedHours, setCalculatedHours] = useState<number>(0);
 
-  // Calculate hours per month from actual tickets
   const calculateHoursFromTickets = (companyName: string) => {
-    const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    const tickets = JSON.parse(localStorage.getItem("tickets") || "[]");
     const companyTickets = tickets.filter((ticket: any) => ticket.company === companyName);
-    
-    // Convert estimated time to hours and sum them up
+
     let totalHours = 0;
     companyTickets.forEach((ticket: any) => {
       const timeStr = ticket.estimatedTime || "";
@@ -64,11 +62,10 @@ const CompanyDetails = () => {
 
   useEffect(() => {
     if (id) {
-      const companies = JSON.parse(localStorage.getItem('companies') || '[]');
-      const foundCompany = companies.find((c: Company) => c.id === parseInt(id));
+      const companies = JSON.parse(localStorage.getItem("companies") || "[]");
+      const foundCompany = companies.find((c: Company) => String(c.id) === id);
       if (foundCompany) {
         setCompany(foundCompany);
-        // Calculate hours from tickets
         const hours = calculateHoursFromTickets(foundCompany.name);
         setCalculatedHours(hours);
       }
@@ -98,7 +95,9 @@ const CompanyDetails = () => {
             <CardContent className="text-center py-8">
               <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Company not found</h3>
-              <p className="text-muted-foreground">The requested company could not be found.</p>
+              <p className="text-muted-foreground">
+                The requested company with ID "{id}" could not be found.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -114,7 +113,6 @@ const CompanyDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -150,9 +148,7 @@ const CompanyDetails = () => {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Information */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Basic Information */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -193,8 +189,7 @@ const CompanyDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Financial Information */}
-            {(company.salary || company.hoursPerMonth || company.costImpact) && (
+            {(company.salary || calculatedHours || company.costImpact) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -207,42 +202,50 @@ const CompanyDetails = () => {
                     {company.salary && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-primary">
-                          JOD {company.salary.toLocaleString('en-JO')}
+                          JOD {company.salary.toLocaleString("en-JO")}
                         </div>
                         <div className="text-sm text-muted-foreground">Monthly Salary</div>
                       </div>
                     )}
-                    
-                    {calculatedHours && (
+
+                    {calculatedHours > 0 && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Clock className="h-5 w-5" />
                           {calculatedHours}
                         </div>
                         <div className="text-sm text-muted-foreground">Hours Per Month</div>
-                        <div className="text-xs text-muted-foreground mt-1">From Ticket Estimates</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          From Ticket Estimates
+                        </div>
                       </div>
                     )}
-                    
-                    {(company.salary && calculatedHours > 0) && (
+
+                    {company.salary && calculatedHours > 0 && (
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          JOD {(company.salary / calculatedHours).toLocaleString('en-JO', { minimumFractionDigits: 2 })} /hour
+                          JOD {(company.salary / calculatedHours).toLocaleString("en-JO", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          /hour
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact</div>
-                        <div className="text-xs text-muted-foreground mt-1">Salary ÷ Hours</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Salary ÷ Hours
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {(company.salary && calculatedHours > 0) && (
+                  {company.salary && calculatedHours > 0 && (
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg">
                       <div className="text-sm text-muted-foreground">
-                        <strong>Cost Impact Calculation:</strong> 
+                        <strong>Cost Impact Calculation:</strong>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        JOD {company.salary.toLocaleString('en-JO')} ÷ {calculatedHours} hours = JOD {(company.salary / calculatedHours).toFixed(2)} per hour
+                        JOD {company.salary.toLocaleString("en-JO")} ÷ {calculatedHours} hours = JOD{" "}
+                        {(company.salary / calculatedHours).toFixed(2)} per hour
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
                         💡 Shows the cost per hour based on actual ticket workload
@@ -253,7 +256,6 @@ const CompanyDetails = () => {
               </Card>
             )}
 
-            {/* Notes Section */}
             {company.notes && (
               <Card>
                 <CardHeader>
@@ -271,9 +273,7 @@ const CompanyDetails = () => {
             )}
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Stats */}
             <Card>
               <CardHeader>
                 <CardTitle>Quick Stats</CardTitle>
@@ -298,7 +298,6 @@ const CompanyDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
@@ -310,9 +309,7 @@ const CompanyDetails = () => {
                   </Button>
                 </Link>
                 <Link to={`/new-ticket?company=${company.name}`} className="w-full">
-                  <Button className="w-full">
-                    Create New Ticket
-                  </Button>
+                  <Button className="w-full">Create New Ticket</Button>
                 </Link>
                 <Link to={`/companies/${company.id}/edit`} className="w-full">
                   <Button variant="outline" className="w-full">
