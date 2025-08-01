@@ -247,7 +247,7 @@ const Companies = () => {
                         Cost Impact
                       </div>
                       <div className="font-semibold text-primary">
-                        AED {company.costImpact.toLocaleString('en-AE')}
+                        JOD {company.costImpact.toLocaleString('en-JO')}
                       </div>
                     </div>
                   )}

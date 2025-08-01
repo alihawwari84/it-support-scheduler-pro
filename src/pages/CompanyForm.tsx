@@ -286,7 +286,7 @@ const CompanyForm = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="salary">Company Salary (per month) - AED</Label>
+                    <Label htmlFor="salary">Company Salary (per month) - JOD</Label>
                     <Input
                       id="salary"
                       type="number"
@@ -327,10 +327,10 @@ const CompanyForm = () => {
                         Calculated Cost Impact
                       </div>
                       <div className="text-2xl font-bold text-primary">
-                        AED {costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /hour
+                        JOD {costImpact.toLocaleString('en-JO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /hour
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Cost Impact: AED {formData.salary || 0} ÷ {calculatedHours} hours
+                        Cost Impact: JOD {formData.salary || 0} ÷ {calculatedHours} hours
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
                         ℹ️ Cost Impact = Monthly Salary ÷ Monthly Hours from Tickets

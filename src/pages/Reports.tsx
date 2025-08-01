@@ -326,7 +326,7 @@ const Reports = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        AED {company.costImpact ? company.costImpact.toLocaleString('en-AE') : '0'}
+                        JOD {company.costImpact ? company.costImpact.toLocaleString('en-JO') : '0'}
                       </Badge>
                     </TableCell>
                   </TableRow>
