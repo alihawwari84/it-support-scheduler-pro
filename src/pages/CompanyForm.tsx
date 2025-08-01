@@ -42,25 +42,61 @@ const CompanyForm = () => {
     address: "",
     notes: "",
     salary: 0,
-    hoursPerMonth: 160, // Default to standard 40hrs/week * 4 weeks
+    hoursPerMonth: 0, // Will be calculated from tickets
     activeTickets: 0,
     totalTickets: 0,
     status: "active"
   });
 
+  const [calculatedHours, setCalculatedHours] = useState<number>(0);
+
   const [costImpact, setCostImpact] = useState<number>(0);
 
-  // Calculate cost impact whenever salary or hours change
+  // Calculate hours per month from actual tickets
+  const calculateHoursFromTickets = (companyName: string) => {
+    const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    const companyTickets = tickets.filter((ticket: any) => ticket.company === companyName);
+    
+    // Convert estimated time to hours and sum them up
+    let totalHours = 0;
+    companyTickets.forEach((ticket: any) => {
+      const timeStr = ticket.estimatedTime || "";
+      if (timeStr.includes("minutes")) {
+        totalHours += parseFloat(timeStr) / 60;
+      } else if (timeStr.includes("hour")) {
+        totalHours += parseFloat(timeStr);
+      } else if (timeStr.includes("Half day")) {
+        totalHours += 4;
+      } else if (timeStr.includes("Full day")) {
+        totalHours += 8;
+      }
+    });
+
+    // Calculate average per month (assuming tickets are spread over time)
+    // For now, we'll use total hours as monthly estimate
+    return Math.round(totalHours * 100) / 100;
+  };
+
+  // Calculate cost impact whenever salary or calculated hours change
   useEffect(() => {
-    if (formData.salary && formData.hoursPerMonth) {
+    if (formData.salary && calculatedHours > 0) {
       const standardMonthlyHours = 160; // 40 hours/week * 4 weeks
       const hourlyRate = formData.salary / standardMonthlyHours;
-      const calculatedCostImpact = hourlyRate * formData.hoursPerMonth;
+      const calculatedCostImpact = hourlyRate * calculatedHours;
       setCostImpact(calculatedCostImpact);
     } else {
       setCostImpact(0);
     }
-  }, [formData.salary, formData.hoursPerMonth]);
+  }, [formData.salary, calculatedHours]);
+
+  // Update calculated hours when company name changes
+  useEffect(() => {
+    if (formData.name) {
+      const hours = calculateHoursFromTickets(formData.name);
+      setCalculatedHours(hours);
+      setFormData(prev => ({ ...prev, hoursPerMonth: hours }));
+    }
+  }, [formData.name]);
 
   // Load existing company data if editing
   useEffect(() => {
@@ -69,6 +105,10 @@ const CompanyForm = () => {
       const company = companies.find((c: Company) => c.id === parseInt(id));
       if (company) {
         setFormData(company);
+        // Recalculate hours from tickets for existing company
+        const hours = calculateHoursFromTickets(company.name);
+        setCalculatedHours(hours);
+        setFormData(prev => ({ ...prev, hoursPerMonth: hours }));
       }
     }
   }, [isEditing, id]);
@@ -126,7 +166,7 @@ const CompanyForm = () => {
         status: "active",
         notes: formData.notes || "",
         salary: formData.salary || 0,
-        hoursPerMonth: formData.hoursPerMonth || 160,
+        hoursPerMonth: calculatedHours,
         costImpact
       };
 
@@ -260,16 +300,22 @@ const CompanyForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="hoursPerMonth">Hours Per Month</Label>
-                    <Input
-                      id="hoursPerMonth"
-                      type="number"
-                      placeholder="160"
-                      min="0"
-                      step="0.5"
-                      value={formData.hoursPerMonth || ""}
-                      onChange={(e) => handleInputChange("hoursPerMonth", parseFloat(e.target.value) || 0)}
-                    />
+                    <Label htmlFor="hoursPerMonth">Hours Per Month (Calculated from Tickets)</Label>
+                    <div className="relative">
+                      <Input
+                        id="hoursPerMonth"
+                        type="number"
+                        value={calculatedHours}
+                        disabled
+                        className="bg-muted cursor-not-allowed"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Automatically calculated from ticket estimated times
+                    </div>
                   </div>
                 </div>
 
@@ -285,7 +331,10 @@ const CompanyForm = () => {
                         AED {costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Based on {formData.hoursPerMonth} hours at AED {formData.salary ? (formData.salary / 160).toFixed(2) : '0.00'} per hour
+                        Based on {calculatedHours} ticket hours at AED {formData.salary ? (formData.salary / 160).toFixed(2) : '0.00'} per hour
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
+                        ℹ️ Hours automatically calculated from actual ticket estimates
                       </div>
                     </CardContent>
                   </Card>

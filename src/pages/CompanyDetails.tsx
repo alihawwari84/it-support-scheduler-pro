@@ -37,12 +37,41 @@ interface Company {
 const CompanyDetails = () => {
   const { id } = useParams();
   const [company, setCompany] = useState<Company | null>(null);
+  const [calculatedHours, setCalculatedHours] = useState<number>(0);
+
+  // Calculate hours per month from actual tickets
+  const calculateHoursFromTickets = (companyName: string) => {
+    const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    const companyTickets = tickets.filter((ticket: any) => ticket.company === companyName);
+    
+    // Convert estimated time to hours and sum them up
+    let totalHours = 0;
+    companyTickets.forEach((ticket: any) => {
+      const timeStr = ticket.estimatedTime || "";
+      if (timeStr.includes("minutes")) {
+        totalHours += parseFloat(timeStr) / 60;
+      } else if (timeStr.includes("hour")) {
+        totalHours += parseFloat(timeStr);
+      } else if (timeStr.includes("Half day")) {
+        totalHours += 4;
+      } else if (timeStr.includes("Full day")) {
+        totalHours += 8;
+      }
+    });
+
+    return Math.round(totalHours * 100) / 100;
+  };
 
   useEffect(() => {
     if (id) {
       const companies = JSON.parse(localStorage.getItem('companies') || '[]');
       const foundCompany = companies.find((c: Company) => c.id === parseInt(id));
-      setCompany(foundCompany || null);
+      if (foundCompany) {
+        setCompany(foundCompany);
+        // Calculate hours from tickets
+        const hours = calculateHoursFromTickets(foundCompany.name);
+        setCalculatedHours(hours);
+      }
     }
   }, [id]);
 
@@ -184,32 +213,37 @@ const CompanyDetails = () => {
                       </div>
                     )}
                     
-                    {company.hoursPerMonth && (
+                    {calculatedHours && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Clock className="h-5 w-5" />
-                          {company.hoursPerMonth}
+                          {calculatedHours}
                         </div>
                         <div className="text-sm text-muted-foreground">Hours Per Month</div>
+                        <div className="text-xs text-muted-foreground mt-1">From Ticket Estimates</div>
                       </div>
                     )}
                     
-                    {company.costImpact && (
+                    {(company.salary && calculatedHours) && (
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          AED {company.costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
+                          AED {((company.salary / 160) * calculatedHours).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact</div>
+                        <div className="text-xs text-muted-foreground mt-1">Calculated from Tickets</div>
                       </div>
                     )}
                   </div>
 
-                  {company.salary && company.hoursPerMonth && (
+                  {(company.salary && calculatedHours) && (
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg">
                       <div className="text-sm text-muted-foreground">
                         <strong>Calculation:</strong> Hourly Rate (AED {(company.salary / 160).toFixed(2)}) × 
-                        Hours Per Month ({company.hoursPerMonth}) = AED {(company.costImpact || 0).toFixed(2)}
+                        Ticket Hours ({calculatedHours}) = AED {((company.salary / 160) * calculatedHours).toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Hours calculated from actual ticket estimated times
                       </div>
                     </div>
                   )}
