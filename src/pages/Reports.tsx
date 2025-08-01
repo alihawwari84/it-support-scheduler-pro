@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Download, TrendingUp, Clock, Users, FileText, BarChart3, PieChart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
 const Reports = () => {
   const [timeRange, setTimeRange] = useState("last-30-days");
@@ -242,11 +242,11 @@ const Reports = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsPieChart>
                   <Tooltip />
-                  <RechartsPieChart data={ticketsByType} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
+                  <Pie data={ticketsByType} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
                     {ticketsByType.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
-                  </RechartsPieChart>
+                  </Pie>
                 </RechartsPieChart>
               </ResponsiveContainer>
             </CardContent>
