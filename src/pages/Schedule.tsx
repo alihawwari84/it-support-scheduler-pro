@@ -1,120 +1,69 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Users, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTickets } from "@/hooks/useTickets";
+import { useCompanies } from "@/hooks/useCompanies";
+import { format, addDays, startOfWeek } from "date-fns";
 
 const Schedule = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const { tickets, loading: ticketsLoading } = useTickets();
+  const { companies, loading: companiesLoading } = useCompanies();
 
-  const companies = [
-    {
-      name: "UCS",
-      type: "Remote support",
-      schedule: "As needed",
-      color: "bg-blue-500"
-    },
-    {
-      name: "EMCC",
-      type: "Remote support",
-      schedule: "As needed",
-      color: "bg-green-500"
-    },
-    {
-      name: "Praxis",
-      type: "On-site visit",
-      schedule: "Every Monday at 5:00 PM",
-      color: "bg-purple-500"
-    },
-    {
-      name: "Flucon",
-      type: "Remote support",
-      schedule: "As needed",
-      color: "bg-orange-500"
-    },
-    {
-      name: "Dudin",
-      type: "Remote support",
-      schedule: "As needed",
-      color: "bg-pink-500"
-    },
-    {
-      name: "FNCS",
-      type: "Remote support",
-      schedule: "As needed",
-      color: "bg-cyan-500"
-    },
-    {
-      name: "Exclusive",
-      type: "On-site visits",
-      schedule: "Sunday & Wednesday",
-      color: "bg-red-500"
-    },
-    {
-      name: "Injaz",
-      type: "Full-time",
-      schedule: "9:00 AM - 4:30 PM daily",
-      color: "bg-indigo-500"
-    }
-  ];
+  // Generate company overview from real data
+  const companyOverview = useMemo(() => {
+    return companies.map(company => {
+      const companyTickets = tickets.filter(t => t.company_id === company.id);
+      const activeTickets = companyTickets.filter(t => 
+        t.status !== 'resolved' && t.status !== 'closed'
+      ).length;
+      
+      return {
+        name: company.name,
+        type: activeTickets > 2 ? "High priority support" : "Remote support",
+        schedule: activeTickets > 0 ? "Active tickets pending" : "As needed",
+        color: getCompanyColor(company.name)
+      };
+    });
+  }, [companies, tickets]);
 
-  const weekSchedule = [
-    {
-      day: "Monday",
-      date: "2024-06-10",
-      tasks: [
-        { time: "09:00 - 16:30", company: "Injaz", type: "Full-time shift", priority: "high" },
-        { time: "17:00 - 18:00", company: "Praxis", type: "On-site visit", priority: "high" }
-      ]
-    },
-    {
-      day: "Tuesday",
-      date: "2024-06-11",
-      tasks: [
-        { time: "09:00 - 16:30", company: "Injaz", type: "Full-time shift", priority: "high" },
-        { time: "10:00 - 11:00", company: "UCS", type: "Network troubleshooting", priority: "medium" }
-      ]
-    },
-    {
-      day: "Wednesday",
-      date: "2024-06-12",
-      tasks: [
-        { time: "09:00 - 16:30", company: "Injaz", type: "Full-time shift", priority: "high" },
-        { time: "18:00 - 19:00", company: "Exclusive", type: "On-site visit", priority: "high" }
-      ]
-    },
-    {
-      day: "Thursday",
-      date: "2024-06-13",
-      tasks: [
-        { time: "09:00 - 16:30", company: "Injaz", type: "Full-time shift", priority: "high" },
-        { time: "14:00 - 14:30", company: "EMCC", type: "Email setup", priority: "low" }
-      ]
-    },
-    {
-      day: "Friday",
-      date: "2024-06-14",
-      tasks: [
-        { time: "09:00 - 16:30", company: "Injaz", type: "Full-time shift", priority: "high" }
-      ]
-    },
-    {
-      day: "Saturday",
-      date: "2024-06-15",
-      tasks: [
-        { time: "10:00 - 11:00", company: "Flucon", type: "Software installation", priority: "medium" }
-      ]
-    },
-    {
-      day: "Sunday",
-      date: "2024-06-16",
-      tasks: [
-        { time: "14:00 - 15:00", company: "Exclusive", type: "On-site visit", priority: "high" }
-      ]
-    }
-  ];
+  // Generate weekly schedule from tickets with due dates
+  const weekSchedule = useMemo(() => {
+    const startDate = startOfWeek(selectedDate);
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(startDate, i);
+      const dayTickets = tickets.filter(ticket => {
+        return ticket.due_date && 
+               format(new Date(ticket.due_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+      });
+
+      return {
+        day: format(date, 'EEEE'),
+        date: format(date, 'yyyy-MM-dd'),
+        tasks: dayTickets.map(ticket => ({
+          time: ticket.due_date ? format(new Date(ticket.due_date), 'HH:mm') : 'All day',
+          company: ticket.companies?.name || 'Unknown',
+          type: ticket.title,
+          priority: ticket.priority
+        }))
+      };
+    });
+
+    return weekDays;
+  }, [tickets, selectedDate]);
+
+  function getCompanyColor(companyName: string): string {
+    const colors = [
+      "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500",
+      "bg-pink-500", "bg-cyan-500", "bg-red-500", "bg-indigo-500"
+    ];
+    const index = companyName.charCodeAt(0) % colors.length;
+    return colors[index];
+  }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -146,15 +95,25 @@ const Schedule = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Loading State */}
+        {(ticketsLoading || companiesLoading) && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading schedule...</span>
+          </div>
+        )}
+
+        {!ticketsLoading && !companiesLoading && (
+          <>
         {/* Company Overview */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Company Schedule Overview</CardTitle>
-            <CardDescription>Fixed schedules and commitments</CardDescription>
+            <CardDescription>Current status and commitments</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {companies.map((company) => (
+              {companyOverview.map((company) => (
                 <div key={company.name} className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-3 h-3 rounded-full ${company.color}`}></div>
@@ -248,6 +207,8 @@ const Schedule = () => {
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

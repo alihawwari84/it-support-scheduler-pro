@@ -30,17 +30,34 @@ const Index = () => {
     return { pendingTickets, todayTasks, activeCompanies, weeklyResolved };
   }, [tickets, companies]);
 
-  const upcomingTasks = [
-    { id: 1, company: "Praxis", task: "On-site visit", time: "5:00 PM", priority: "high" },
-    { id: 2, company: "Injaz", task: "Full-time shift", time: "9:00 AM", priority: "medium" },
-    { id: 3, company: "Exclusive", task: "On-site visit", time: "Sunday", priority: "high" },
-  ];
+  // Calculate upcoming tasks from tickets with due dates
+  const upcomingTasks = useMemo(() => {
+    return tickets
+      .filter(ticket => ticket.due_date && new Date(ticket.due_date) >= new Date())
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+      .slice(0, 3)
+      .map(ticket => ({
+        id: ticket.id,
+        company: ticket.companies?.name || 'Unknown',
+        task: ticket.title,
+        time: new Date(ticket.due_date!).toLocaleDateString(),
+        priority: ticket.priority
+      }));
+  }, [tickets]);
 
-  const recentTickets = [
-    { id: 1, company: "UCS", issue: "Network connectivity", status: "pending", priority: "high" },
-    { id: 2, company: "EMCC", issue: "Email setup", status: "in-progress", priority: "medium" },
-    { id: 3, company: "Flucon", issue: "Software installation", status: "resolved", priority: "low" },
-  ];
+  // Get recent tickets
+  const recentTickets = useMemo(() => {
+    return tickets
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3)
+      .map(ticket => ({
+        id: ticket.id,
+        company: ticket.companies?.name || 'Unknown',
+        issue: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority
+      }));
+  }, [tickets]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,7 +82,17 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Loading State */}
+        {(ticketsLoading || companiesLoading) && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading dashboard...</span>
+          </div>
+        )}
+
         {/* Stats Overview */}
+        {!ticketsLoading && !companiesLoading && (
+          <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -210,6 +237,8 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+        </>
+        )}
       </div>
     </div>
   );
