@@ -1,81 +1,49 @@
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Clock, FileText, Users, Calendar } from "lucide-react";
+import { Clock, FileText, Users, Calendar, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useTickets } from "@/hooks/useTickets";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useTicketCategories } from "@/hooks/useTicketCategories";
+import { format } from "date-fns";
 
 const Tickets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
-  const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [updateStatus, setUpdateStatus] = useState("");
   const { toast } = useToast();
 
-  const companies = ["UCS", "EMCC", "Praxis", "Flucon", "Dudin", "FNCS", "Exclusive", "Injaz"];
+  const { tickets, loading: ticketsLoading, updateTicket } = useTickets();
+  const { companies, loading: companiesLoading } = useCompanies();
+  const { categories } = useTicketCategories();
 
-  // Load tickets from localStorage on component mount
-  useEffect(() => {
-    const savedTickets = localStorage.getItem('tickets');
-    if (savedTickets) {
-      setTickets(JSON.parse(savedTickets));
-    } else {
-      // Set default tickets if none exist
-      const defaultTickets = [
-        {
-          id: 1,
-          company: "UCS",
-          title: "Network connectivity issues",
-          description: "Users unable to access shared drives",
-          priority: "high",
-          status: "pending",
-          type: "Network",
-          createdAt: "2024-06-10 09:30",
-          estimatedTime: "2 hours",
-          scheduledDate: null,
-          scheduledTime: null
-        },
-        {
-          id: 2,
-          company: "EMCC",
-          title: "Email configuration",
-          description: "New employee needs Outlook setup",
-          priority: "medium",
-          status: "in-progress",
-          type: "Email",
-          createdAt: "2024-06-10 08:15",
-          estimatedTime: "1 hour",
-          scheduledDate: null,
-          scheduledTime: null
-        }
-      ];
-      setTickets(defaultTickets);
-      localStorage.setItem('tickets', JSON.stringify(defaultTickets));
-    }
-  }, []);
-
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-    const matchesCompany = companyFilter === "all" || ticket.company === companyFilter;
-    
-    return matchesSearch && matchesStatus && matchesCompany;
-  });
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(ticket => {
+      const companyName = ticket.companies?.name || '';
+      const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           companyName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
+      const matchesCompany = companyFilter === "all" || ticket.company_id === companyFilter;
+      
+      return matchesSearch && matchesStatus && matchesCompany;
+    });
+  }, [tickets, searchTerm, statusFilter, companyFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "destructive";
-      case "in-progress": return "default";
-      case "scheduled": return "secondary";
-      case "resolved": return "outline";
+      case "open": return "destructive";
+      case "in_progress": return "default";
+      case "resolved": return "secondary";
+      case "closed": return "outline";
       default: return "secondary";
     }
   };
@@ -94,25 +62,17 @@ const Tickets = () => {
     setUpdateStatus(ticket.status);
   };
 
-  const saveTicketUpdate = () => {
+  const saveTicketUpdate = async () => {
     if (!selectedTicket) return;
 
-    const updatedTickets = tickets.map((ticket: any) =>
-      ticket.id === selectedTicket.id
-        ? { ...ticket, status: updateStatus }
-        : ticket
-    );
-
-    setTickets(updatedTickets);
-    localStorage.setItem('tickets', JSON.stringify(updatedTickets));
-    
-    toast({
-      title: "Ticket Updated",
-      description: `Ticket #${selectedTicket.id} status updated to ${updateStatus}`,
-    });
-
-    setSelectedTicket(null);
-    setUpdateStatus("");
+    try {
+      await updateTicket(selectedTicket.id, { status: updateStatus });
+      setSelectedTicket(null);
+      setUpdateStatus("");
+    } catch (error) {
+      // Error handling is done in the hook
+      console.error('Failed to update ticket:', error);
+    }
   };
 
   return (
@@ -161,10 +121,10 @@ const Tickets = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -177,7 +137,7 @@ const Tickets = () => {
                   <SelectContent>
                     <SelectItem value="all">All companies</SelectItem>
                     {companies.map(company => (
-                      <SelectItem key={company} value={company}>{company}</SelectItem>
+                      <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -186,99 +146,105 @@ const Tickets = () => {
           </CardContent>
         </Card>
 
-        {/* Tickets List */}
-        <div className="space-y-4">
-          {filteredTickets.map((ticket) => (
-            <Card key={ticket.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg">{ticket.title}</h3>
-                      <Badge variant={getStatusColor(ticket.status)}>
-                        {ticket.status}
-                      </Badge>
-                      <span className={`text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
-                        {ticket.priority} priority
-                      </span>
-                    </div>
-                    
-                    <p className="text-muted-foreground mb-3">{ticket.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{ticket.company}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span>{ticket.type}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>Est. {ticket.estimatedTime}</span>
-                      </div>
-                      {ticket.scheduledDate && ticket.scheduledTime && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{ticket.scheduledDate} at {ticket.scheduledTime}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="text-right ml-4">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Created: {ticket.createdAt}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">View</Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" onClick={() => handleUpdateTicket(ticket)}>
-                            Update
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Update Ticket #{ticket.id}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold">{ticket.title}</h4>
-                              <p className="text-sm text-muted-foreground">{ticket.company}</p>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium mb-2 block">Status</label>
-                              <Select value={updateStatus} onValueChange={setUpdateStatus}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="in-progress">In Progress</SelectItem>
-                                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                                  <SelectItem value="resolved">Resolved</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex gap-2 pt-4">
-                              <Button onClick={saveTicketUpdate} className="flex-1">
-                                Save Changes
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Loading State */}
+        {(ticketsLoading || companiesLoading) && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading tickets...</span>
+          </div>
+        )}
 
-        {filteredTickets.length === 0 && (
+        {/* Tickets List */}
+        {!ticketsLoading && !companiesLoading && (
+          <div className="space-y-4">
+            {filteredTickets.map((ticket) => (
+              <Card key={ticket.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-lg">{ticket.title}</h3>
+                        <Badge variant={getStatusColor(ticket.status)}>
+                          {ticket.status.replace('_', ' ')}
+                        </Badge>
+                        <span className={`text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
+                          {ticket.priority} priority
+                        </span>
+                      </div>
+                      
+                      <p className="text-muted-foreground mb-3">{ticket.description}</p>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{ticket.companies?.name || 'No company'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          <span>{ticket.ticket_categories?.name || 'No category'}</span>
+                        </div>
+                        {ticket.due_date && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>Due: {format(new Date(ticket.due_date), 'MMM dd, yyyy')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="text-right ml-4">
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Created: {format(new Date(ticket.created_at), 'MMM dd, yyyy HH:mm')}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">View</Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" onClick={() => handleUpdateTicket(ticket)}>
+                              Update
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Update Ticket</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold">{ticket.title}</h4>
+                                <p className="text-sm text-muted-foreground">{ticket.companies?.name}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Status</label>
+                                <Select value={updateStatus} onValueChange={setUpdateStatus}>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="open">Open</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="resolved">Resolved</SelectItem>
+                                    <SelectItem value="closed">Closed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex gap-2 pt-4">
+                                <Button onClick={saveTicketUpdate} className="flex-1">
+                                  Save Changes
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!ticketsLoading && !companiesLoading && filteredTickets.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
