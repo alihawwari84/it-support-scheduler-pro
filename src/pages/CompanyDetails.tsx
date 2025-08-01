@@ -228,10 +228,10 @@ const CompanyDetails = () => {
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          AED {((company.salary / calculatedHours) * calculatedHours).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
+                          AED {(company.salary / calculatedHours).toLocaleString('en-AE', { minimumFractionDigits: 2 })} /hour
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact</div>
-                        <div className="text-xs text-muted-foreground mt-1">Calculated from Tickets</div>
+                        <div className="text-xs text-muted-foreground mt-1">Salary ÷ Hours</div>
                       </div>
                     )}
                   </div>
@@ -239,16 +239,13 @@ const CompanyDetails = () => {
                   {(company.salary && calculatedHours > 0) && (
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg">
                       <div className="text-sm text-muted-foreground">
-                        <strong>Dynamic Calculation:</strong> 
+                        <strong>Cost Impact Calculation:</strong> 
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Hourly Rate = Monthly Salary ÷ Monthly Hours = AED {(company.salary / calculatedHours).toFixed(2)} per hour
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        Cost Impact = AED {(company.salary / calculatedHours).toFixed(2)} × {calculatedHours} hours = AED {company.salary.toFixed(2)}
+                        AED {company.salary.toLocaleString('en-AE')} ÷ {calculatedHours} hours = AED {(company.salary / calculatedHours).toFixed(2)} per hour
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
-                        💡 Hourly rate adjusts based on actual ticket workload
+                        💡 Shows the cost per hour based on actual ticket workload
                       </div>
                     </div>
                   )}

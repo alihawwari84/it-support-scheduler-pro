@@ -77,13 +77,11 @@ const CompanyForm = () => {
     return Math.round(totalHours * 100) / 100;
   };
 
-  // Calculate cost impact with dynamic hourly rate
+  // Calculate cost impact: Monthly salary ÷ Monthly hours = Cost per hour
   useEffect(() => {
     if (formData.salary && calculatedHours > 0) {
-      // Dynamic hourly rate: Monthly salary ÷ Actual monthly hours from tickets
-      const hourlyRate = formData.salary / calculatedHours;
-      // Cost impact: Hourly rate × Monthly hours = Monthly salary
-      const calculatedCostImpact = hourlyRate * calculatedHours;
+      // Cost Impact = Salary ÷ Hours (cost per hour)
+      const calculatedCostImpact = formData.salary / calculatedHours;
       setCostImpact(calculatedCostImpact);
     } else {
       setCostImpact(0);
@@ -329,13 +327,13 @@ const CompanyForm = () => {
                         Calculated Cost Impact
                       </div>
                       <div className="text-2xl font-bold text-primary">
-                        AED {costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        AED {costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /hour
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Based on {calculatedHours} ticket hours at AED {formData.salary && calculatedHours > 0 ? (formData.salary / calculatedHours).toFixed(2) : '0.00'} per hour
+                        Cost Impact: AED {formData.salary || 0} ÷ {calculatedHours} hours
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
-                        ℹ️ Hourly Rate = Monthly Salary ÷ Monthly Hours from Tickets
+                        ℹ️ Cost Impact = Monthly Salary ÷ Monthly Hours from Tickets
                       </div>
                     </CardContent>
                   </Card>
