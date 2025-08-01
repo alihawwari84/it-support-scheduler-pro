@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Calendar, FileText } from "lucide-react";
+import { Clock, Users, Calendar, FileText, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTickets } from "@/hooks/useTickets";
+import { useCompanies } from "@/hooks/useCompanies";
 
 const Index = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
