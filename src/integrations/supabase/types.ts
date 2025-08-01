@@ -10,105 +10,11 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      allocations: {
-        Row: {
-          employee_id: string
-          id: string
-          percentage: number | null
-          project_id: string | null
-        }
-        Insert: {
-          employee_id?: string
-          id?: string
-          percentage?: number | null
-          project_id?: string | null
-        }
-        Update: {
-          employee_id?: string
-          id?: string
-          percentage?: number | null
-          project_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "allocations_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "allocations_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_allocations_employee"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_allocations_project"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      employees: {
-        Row: {
-          department: string | null
-          email: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          department?: string | null
-          email?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          department?: string | null
-          email?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      projects: {
-        Row: {
-          end_date: string | null
-          id: string
-          name: string
-          start_date: string | null
-          status: string | null
-        }
-        Insert: {
-          end_date?: string | null
-          id?: string
-          name: string
-          start_date?: string | null
-          status?: string | null
-        }
-        Update: {
-          end_date?: string | null
-          id?: string
-          name?: string
-          start_date?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
