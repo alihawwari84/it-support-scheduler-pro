@@ -8,14 +8,25 @@ import { Link } from "react-router-dom";
 
 const Index = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { tickets, loading: ticketsLoading } = useTickets();
+  const { companies, loading: companiesLoading } = useCompanies();
 
-  // Mock data for dashboard overview
-  const stats = {
-    pendingTickets: 12,
-    todayTasks: 8,
-    activeCompanies: 8,
-    weeklyResolved: 34
-  };
+  // Calculate real stats from Supabase data
+  const stats = useMemo(() => {
+    const pendingTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
+    const todayTasks = tickets.filter(t => {
+      const today = new Date().toDateString();
+      return t.due_date && new Date(t.due_date).toDateString() === today;
+    }).length;
+    const activeCompanies = companies.length;
+    const weeklyResolved = tickets.filter(t => {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return t.status === 'resolved' && t.resolved_at && new Date(t.resolved_at) >= weekAgo;
+    }).length;
+
+    return { pendingTickets, todayTasks, activeCompanies, weeklyResolved };
+  }, [tickets, companies]);
 
   const upcomingTasks = [
     { id: 1, company: "Praxis", task: "On-site visit", time: "5:00 PM", priority: "high" },
