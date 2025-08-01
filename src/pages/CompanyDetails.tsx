@@ -224,11 +224,11 @@ const CompanyDetails = () => {
                       </div>
                     )}
                     
-                    {(company.salary && calculatedHours) && (
+                    {(company.salary && calculatedHours > 0) && (
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          AED {((company.salary / 160) * calculatedHours).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
+                          AED {((company.salary / calculatedHours) * calculatedHours).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact</div>
                         <div className="text-xs text-muted-foreground mt-1">Calculated from Tickets</div>
@@ -236,14 +236,19 @@ const CompanyDetails = () => {
                     )}
                   </div>
 
-                  {(company.salary && calculatedHours) && (
+                  {(company.salary && calculatedHours > 0) && (
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg">
                       <div className="text-sm text-muted-foreground">
-                        <strong>Calculation:</strong> Hourly Rate (AED {(company.salary / 160).toFixed(2)}) × 
-                        Ticket Hours ({calculatedHours}) = AED {((company.salary / 160) * calculatedHours).toFixed(2)}
+                        <strong>Dynamic Calculation:</strong> 
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Hours calculated from actual ticket estimated times
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Hourly Rate = Monthly Salary ÷ Monthly Hours = AED {(company.salary / calculatedHours).toFixed(2)} per hour
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Cost Impact = AED {(company.salary / calculatedHours).toFixed(2)} × {calculatedHours} hours = AED {company.salary.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
+                        💡 Hourly rate adjusts based on actual ticket workload
                       </div>
                     </div>
                   )}

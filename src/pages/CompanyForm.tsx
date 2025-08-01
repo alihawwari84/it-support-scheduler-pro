@@ -77,11 +77,12 @@ const CompanyForm = () => {
     return Math.round(totalHours * 100) / 100;
   };
 
-  // Calculate cost impact whenever salary or calculated hours change
+  // Calculate cost impact with dynamic hourly rate
   useEffect(() => {
     if (formData.salary && calculatedHours > 0) {
-      const standardMonthlyHours = 160; // 40 hours/week * 4 weeks
-      const hourlyRate = formData.salary / standardMonthlyHours;
+      // Dynamic hourly rate: Monthly salary ÷ Actual monthly hours from tickets
+      const hourlyRate = formData.salary / calculatedHours;
+      // Cost impact: Hourly rate × Monthly hours = Monthly salary
       const calculatedCostImpact = hourlyRate * calculatedHours;
       setCostImpact(calculatedCostImpact);
     } else {
@@ -331,10 +332,10 @@ const CompanyForm = () => {
                         AED {costImpact.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Based on {calculatedHours} ticket hours at AED {formData.salary ? (formData.salary / 160).toFixed(2) : '0.00'} per hour
+                        Based on {calculatedHours} ticket hours at AED {formData.salary && calculatedHours > 0 ? (formData.salary / calculatedHours).toFixed(2) : '0.00'} per hour
                       </div>
                       <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
-                        ℹ️ Hours automatically calculated from actual ticket estimates
+                        ℹ️ Hourly Rate = Monthly Salary ÷ Monthly Hours from Tickets
                       </div>
                     </CardContent>
                   </Card>
