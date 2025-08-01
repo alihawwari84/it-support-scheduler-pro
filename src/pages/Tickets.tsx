@@ -5,14 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Clock, FileText, Users, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Tickets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
   const [tickets, setTickets] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [updateStatus, setUpdateStatus] = useState("");
+  const { toast } = useToast();
 
   const companies = ["UCS", "EMCC", "Praxis", "Flucon", "Dudin", "FNCS", "Exclusive", "Injaz"];
 
@@ -82,6 +87,32 @@ const Tickets = () => {
       case "low": return "text-green-600";
       default: return "text-muted-foreground";
     }
+  };
+
+  const handleUpdateTicket = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setUpdateStatus(ticket.status);
+  };
+
+  const saveTicketUpdate = () => {
+    if (!selectedTicket) return;
+
+    const updatedTickets = tickets.map((ticket: any) =>
+      ticket.id === selectedTicket.id
+        ? { ...ticket, status: updateStatus }
+        : ticket
+    );
+
+    setTickets(updatedTickets);
+    localStorage.setItem('tickets', JSON.stringify(updatedTickets));
+    
+    toast({
+      title: "Ticket Updated",
+      description: `Ticket #${selectedTicket.id} status updated to ${updateStatus}`,
+    });
+
+    setSelectedTicket(null);
+    setUpdateStatus("");
   };
 
   return (
@@ -202,7 +233,43 @@ const Tickets = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">View</Button>
-                      <Button size="sm">Update</Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" onClick={() => handleUpdateTicket(ticket)}>
+                            Update
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Update Ticket #{ticket.id}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-semibold">{ticket.title}</h4>
+                              <p className="text-sm text-muted-foreground">{ticket.company}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Status</label>
+                              <Select value={updateStatus} onValueChange={setUpdateStatus}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in-progress">In Progress</SelectItem>
+                                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                                  <SelectItem value="resolved">Resolved</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex gap-2 pt-4">
+                              <Button onClick={saveTicketUpdate} className="flex-1">
+                                Save Changes
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 </div>
