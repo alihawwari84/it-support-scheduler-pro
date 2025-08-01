@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,16 +30,25 @@ const Reports = () => {
     { month: "April", tickets: 59, hoursSpent: 137, resolved: 54, pending: 5, avgResolutionTime: 2.8 }
   ];
 
-  const ticketsByCompany = [
-    { name: "UCS", tickets: 15, resolved: 12, pending: 3, hoursSpent: 38, avgResolutionTime: 2.5, satisfaction: 92 },
-    { name: "EMCC", tickets: 8, resolved: 7, pending: 1, hoursSpent: 18, avgResolutionTime: 2.1, satisfaction: 95 },
-    { name: "Praxis", tickets: 12, resolved: 10, pending: 2, hoursSpent: 28, avgResolutionTime: 2.3, satisfaction: 88 },
-    { name: "Flucon", tickets: 5, resolved: 5, pending: 0, hoursSpent: 12, avgResolutionTime: 2.4, satisfaction: 100 },
-    { name: "Dudin", tickets: 7, resolved: 6, pending: 1, hoursSpent: 16, avgResolutionTime: 2.2, satisfaction: 90 },
-    { name: "FNCS", tickets: 10, resolved: 8, pending: 2, hoursSpent: 24, avgResolutionTime: 2.6, satisfaction: 85 },
-    { name: "Exclusive", tickets: 3, resolved: 3, pending: 0, hoursSpent: 7, avgResolutionTime: 2.0, satisfaction: 100 },
-    { name: "Injaz", tickets: 6, resolved: 5, pending: 1, hoursSpent: 14, avgResolutionTime: 2.4, satisfaction: 94 }
-  ];
+  // Load companies from localStorage with cost impact data
+  const [ticketsByCompany, setTicketsByCompany] = useState<any[]>([]);
+
+  useEffect(() => {
+    const savedCompanies = JSON.parse(localStorage.getItem('companies') || '[]');
+    const reportData = savedCompanies.map((company: any) => ({
+      name: company.name,
+      tickets: company.totalTickets || 0,
+      resolved: Math.max(0, (company.totalTickets || 0) - (company.activeTickets || 0)),
+      pending: company.activeTickets || 0,
+      hoursSpent: Math.floor(Math.random() * 50) + 10, // Random hours for demo
+      avgResolutionTime: Math.round((Math.random() * 2 + 1.5) * 10) / 10,
+      satisfaction: Math.floor(Math.random() * 20) + 80,
+      costImpact: company.costImpact || 0,
+      salary: company.salary || 0,
+      hoursPerMonth: company.hoursPerMonth || 160
+    }));
+    setTicketsByCompany(reportData);
+  }, []);
 
   const ticketsByType = [
     { name: "Network", value: 25, color: "#8884d8", hoursSpent: 68 },
@@ -315,7 +324,11 @@ const Reports = () => {
                         {company.satisfaction}%
                       </Badge>
                     </TableCell>
-                    <TableCell>${company.hoursSpent * 45}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        AED {company.costImpact ? company.costImpact.toLocaleString('en-AE') : '0'}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
