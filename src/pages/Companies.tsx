@@ -187,12 +187,16 @@ const Companies = () => {
                       <span>Active: {company.activeTickets}</span>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        View Details
-                      </Button>
-                      <Button size="sm" className="flex-1">
-                        New Ticket
-                      </Button>
+                      <Link to={`/tickets?company=${company.name}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          View Details
+                        </Button>
+                      </Link>
+                      <Link to={`/new-ticket?company=${company.name}`} className="flex-1">
+                        <Button size="sm" className="w-full">
+                          New Ticket
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
