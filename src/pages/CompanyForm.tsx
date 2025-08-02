@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Building, DollarSign, Clock, Calculator } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useTickets } from "@/hooks/useTickets";
 
@@ -16,6 +17,9 @@ interface CompanyFormData {
   contact_email: string;
   contact_phone: string;
   address: string;
+  salary?: number;
+  hoursPerMonth?: number;
+  notes?: string;
 }
 
 const CompanyForm = () => {
@@ -32,7 +36,10 @@ const CompanyForm = () => {
     name: prefilledName,
     contact_email: "",
     contact_phone: "",
-    address: ""
+    address: "",
+    salary: undefined,
+    hoursPerMonth: undefined,
+    notes: ""
   });
 
   // Load existing company data if editing
@@ -44,7 +51,10 @@ const CompanyForm = () => {
           name: company.name,
           contact_email: company.contact_email || "",
           contact_phone: company.contact_phone || "",
-          address: company.address || ""
+          address: company.address || "",
+          salary: undefined, // These fields don't exist in current DB schema
+          hoursPerMonth: undefined,
+          notes: ""
         });
       }
     }
@@ -172,6 +182,70 @@ const CompanyForm = () => {
                 />
               </div>
 
+              {/* Financial Information */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Financial Information (Optional)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="salary">Monthly Salary (JOD)</Label>
+                    <Input
+                      id="salary"
+                      type="number"
+                      placeholder="0"
+                      value={formData.salary || ""}
+                      onChange={(e) => handleInputChange("salary", e.target.value ? parseFloat(e.target.value) : undefined)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Monthly salary cost for this company's support
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="hoursPerMonth">Hours Per Month</Label>
+                    <Input
+                      id="hoursPerMonth"
+                      type="number"
+                      placeholder="0"
+                      value={formData.hoursPerMonth || ""}
+                      onChange={(e) => handleInputChange("hoursPerMonth", e.target.value ? parseFloat(e.target.value) : undefined)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Expected hours of support per month
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cost Impact Calculation */}
+                {formData.salary && formData.hoursPerMonth && formData.hoursPerMonth > 0 && (
+                  <div className="mt-4 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
+                        <Calculator className="h-5 w-5" />
+                        JOD {(formData.salary / formData.hoursPerMonth).toFixed(2)} /hour
+                      </div>
+                      <div className="text-sm text-muted-foreground">Cost Impact</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        JOD {formData.salary.toLocaleString("en-JO")} ÷ {formData.hoursPerMonth} hours
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Internal Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Internal Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Internal notes about this company (not visible to client)"
+                  value={formData.notes || ""}
+                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  rows={3}
+                />
+              </div>
               {/* Submit Buttons */}
               <div className="flex gap-3 pt-4">
                 <Button type="submit" className="flex-1">
