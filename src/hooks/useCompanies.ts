@@ -8,6 +8,9 @@ interface Company {
   contact_email?: string;
   contact_phone?: string;
   address?: string;
+  salary?: number;
+  hoursPerMonth?: number;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -79,7 +82,7 @@ export const useCompanies = () => {
 
       if (error) throw error;
 
-      setCompanies(prev => prev.map(company => 
+      setCompanies(prev => prev.map(company =>
         company.id === id ? data : company
       ));
       toast({
