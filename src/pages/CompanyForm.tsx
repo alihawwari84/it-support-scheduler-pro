@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Building, DollarSign, Clock, Calculator } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useTickets } from "@/hooks/useTickets";
 
@@ -96,7 +95,7 @@ const CompanyForm = () => {
     }
   };
 
-  const handleInputChange = (field: keyof CompanyFormData, value: string) => {
+  const handleInputChange = (field: keyof CompanyFormData, value: string | number | undefined) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
