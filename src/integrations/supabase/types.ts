@@ -23,6 +23,7 @@ export type Database = {
           hours_per_month: number | null
           id: string
           name: string
+          notes: string | null
           salary: number | null
           updated_at: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           hours_per_month?: number | null
           id?: string
           name: string
+          notes?: string | null
           salary?: number | null
           updated_at?: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           hours_per_month?: number | null
           id?: string
           name?: string
+          notes?: string | null
           salary?: number | null
           updated_at?: string
         }
