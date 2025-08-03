@@ -17,7 +17,7 @@ interface CompanyFormData {
   contact_phone: string;
   address: string;
   salary?: number;
-  hoursPerMonth?: number;
+  hours_per_month?: number;
   notes?: string;
 }
 
@@ -37,7 +37,7 @@ const CompanyForm = () => {
     contact_phone: "",
     address: "",
     salary: undefined,
-    hoursPerMonth: undefined,
+    hours_per_month: undefined,
     notes: ""
   });
 
@@ -51,9 +51,9 @@ const CompanyForm = () => {
           contact_email: company.contact_email || "",
           contact_phone: company.contact_phone || "",
           address: company.address || "",
-          salary: undefined, // These fields don't exist in current DB schema
-          hoursPerMonth: undefined,
-          notes: ""
+          salary: company.salary,
+          hours_per_month: company.hours_per_month,
+          notes: company.notes || ""
         });
       }
     }
@@ -203,13 +203,13 @@ const CompanyForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="hoursPerMonth">Hours Per Month</Label>
+                    <Label htmlFor="hours_per_month">Hours Per Month</Label>
                     <Input
-                      id="hoursPerMonth"
+                      id="hours_per_month"
                       type="number"
                       placeholder="0"
-                      value={formData.hoursPerMonth || ""}
-                      onChange={(e) => handleInputChange("hoursPerMonth", e.target.value ? parseFloat(e.target.value) : undefined)}
+                      value={formData.hours_per_month || ""}
+                      onChange={(e) => handleInputChange("hours_per_month", e.target.value ? parseFloat(e.target.value) : undefined)}
                     />
                     <p className="text-xs text-muted-foreground">
                       Expected hours of support per month
@@ -218,16 +218,16 @@ const CompanyForm = () => {
                 </div>
 
                 {/* Cost Impact Calculation */}
-                {formData.salary && formData.hoursPerMonth && formData.hoursPerMonth > 0 && (
+                {formData.salary && formData.hours_per_month && formData.hours_per_month > 0 && (
                   <div className="mt-4 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                         <Calculator className="h-5 w-5" />
-                        JOD {(formData.salary / formData.hoursPerMonth).toFixed(2)} /hour
+                        JOD {(formData.salary / formData.hours_per_month).toFixed(2)} /hour
                       </div>
                       <div className="text-sm text-muted-foreground">Cost Impact</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        JOD {formData.salary.toLocaleString("en-JO")} ÷ {formData.hoursPerMonth} hours
+                        JOD {formData.salary.toLocaleString("en-JO")} ÷ {formData.hours_per_month} hours
                       </div>
                     </div>
                   </div>

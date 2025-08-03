@@ -17,60 +17,51 @@ import {
   Calculator,
   FileText
 } from "lucide-react";
-
-interface Company {
-  id: number | string;
-  name: string;
-  contact: string;
-  phone: string;
-  email: string;
-  address: string;
-  activeTickets: number;
-  totalTickets: number;
-  status: string;
-  notes?: string;
-  salary?: number;
-  hoursPerMonth?: number;
-  costImpact?: number;
-}
+import { useCompanies } from "@/hooks/useCompanies";
+import { useTickets } from "@/hooks/useTickets";
 
 const CompanyDetails = () => {
   const { id } = useParams();
-  const [company, setCompany] = useState<Company | null>(null);
+  const { companies, loading: companiesLoading } = useCompanies();
+  const { tickets, loading: ticketsLoading } = useTickets();
   const [calculatedHours, setCalculatedHours] = useState<number>(0);
 
-  const calculateHoursFromTickets = (companyName: string) => {
-    const tickets = JSON.parse(localStorage.getItem("tickets") || "[]");
-    const companyTickets = tickets.filter((ticket: any) => ticket.company === companyName);
+  const company = companies.find(c => c.id === id);
 
-    let totalHours = 0;
-    companyTickets.forEach((ticket: any) => {
-      const timeStr = ticket.estimatedTime || "";
-      if (timeStr.includes("minutes")) {
-        totalHours += parseFloat(timeStr) / 60;
-      } else if (timeStr.includes("hour")) {
-        totalHours += parseFloat(timeStr);
-      } else if (timeStr.includes("Half day")) {
-        totalHours += 4;
-      } else if (timeStr.includes("Full day")) {
-        totalHours += 8;
-      }
-    });
-
-    return Math.round(totalHours * 100) / 100;
+  const calculateHoursFromTickets = (companyId: string) => {
+    const companyTickets = tickets.filter(ticket => ticket.company_id === companyId);
+    // For now, we'll estimate 2 hours per ticket as we don't have estimated time field
+    return companyTickets.length * 2;
   };
 
   useEffect(() => {
-    if (id) {
-      const companies = JSON.parse(localStorage.getItem("companies") || "[]");
-      const foundCompany = companies.find((c: Company) => String(c.id) === id);
-      if (foundCompany) {
-        setCompany(foundCompany);
-        const hours = calculateHoursFromTickets(foundCompany.name);
-        setCalculatedHours(hours);
-      }
+    if (company && !ticketsLoading) {
+      const hours = calculateHoursFromTickets(company.id);
+      setCalculatedHours(hours);
     }
-  }, [id]);
+  }, [company, tickets, ticketsLoading]);
+
+  if (companiesLoading || ticketsLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Link to="/companies">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Companies
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Loading...</h1>
+              </div>
+            </div>
+          </div>
+        </header>
+      </div>
+    );
+  }
 
   if (!company) {
     return (
@@ -104,6 +95,10 @@ const CompanyDetails = () => {
       </div>
     );
   }
+
+  const companyTickets = tickets.filter(ticket => ticket.company_id === company.id);
+  const activeTickets = companyTickets.filter(ticket => ticket.status !== 'resolved').length;
+  const totalTickets = companyTickets.length;
 
   const getStatusColor = (activeTickets: number) => {
     if (activeTickets > 2) return "destructive";
@@ -156,8 +151,8 @@ const CompanyDetails = () => {
                     <Building className="h-5 w-5" />
                     Company Information
                   </CardTitle>
-                  <Badge variant={getStatusColor(company.activeTickets)}>
-                    {company.activeTickets} active tickets
+                  <Badge variant={getStatusColor(activeTickets)}>
+                    {activeTickets} active tickets
                   </Badge>
                 </div>
               </CardHeader>
@@ -165,31 +160,26 @@ const CompanyDetails = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Contact:</span>
-                      <span>{company.contact}</span>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Email:</span>
+                      <span>{company.contact_email || 'Not provided'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Phone:</span>
-                      <span>{company.phone}</span>
+                      <span>{company.contact_phone || 'Not provided'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">Email:</span>
-                      <span>{company.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm col-span-full">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Address:</span>
-                      <span>{company.address}</span>
+                      <span>{company.address || 'Not provided'}</span>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {(company.salary || calculatedHours || company.costImpact) && (
+            {(company.salary || calculatedHours > 0 || company.hours_per_month) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -208,50 +198,42 @@ const CompanyDetails = () => {
                       </div>
                     )}
 
-                    {calculatedHours > 0 && (
+                    {company.hours_per_month && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Clock className="h-5 w-5" />
+                          {company.hours_per_month}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Expected Hours Per Month</div>
+                      </div>
+                    )}
+
+                    {calculatedHours > 0 && (
+                      <div className="text-center p-4 bg-muted/50 rounded-lg">
+                        <div className="text-2xl font-bold text-secondary flex items-center justify-center gap-1">
+                          <Clock className="h-5 w-5" />
                           {calculatedHours}
                         </div>
-                        <div className="text-sm text-muted-foreground">Hours Per Month</div>
+                        <div className="text-sm text-muted-foreground">Calculated Hours</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          From Ticket Estimates
+                          From Tickets (2hrs/ticket)
                         </div>
                       </div>
                     )}
 
-                    {company.salary && calculatedHours > 0 && (
-                      <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                    {company.salary && company.hours_per_month && (
+                      <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20 col-span-full">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          JOD {(company.salary / calculatedHours).toLocaleString("en-JO", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          /hour
+                          JOD {(company.salary / company.hours_per_month).toFixed(2)} /hour
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          Salary ÷ Hours
+                          JOD {company.salary.toLocaleString("en-JO")} ÷ {company.hours_per_month} hours
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {company.salary && calculatedHours > 0 && (
-                    <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                      <div className="text-sm text-muted-foreground">
-                        <strong>Cost Impact Calculation:</strong>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        JOD {company.salary.toLocaleString("en-JO")} ÷ {calculatedHours} hours = JOD{" "}
-                        {(company.salary / calculatedHours).toFixed(2)} per hour
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 rounded">
-                        💡 Shows the cost per hour based on actual ticket workload
-                      </div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -282,17 +264,19 @@ const CompanyDetails = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Tickets</span>
-                    <span className="font-medium">{company.totalTickets}</span>
+                    <span className="font-medium">{totalTickets}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Active Tickets</span>
-                    <Badge variant={getStatusColor(company.activeTickets)}>
-                      {company.activeTickets}
+                    <Badge variant={getStatusColor(activeTickets)}>
+                      {activeTickets}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant="secondary">{company.status}</Badge>
+                    <Badge variant="secondary">
+                      {activeTickets === 0 ? 'No Active Tickets' : `${activeTickets} Active`}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>

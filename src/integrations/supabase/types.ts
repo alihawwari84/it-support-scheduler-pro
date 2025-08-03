@@ -20,8 +20,10 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          hours_per_month: number | null
           id: string
           name: string
+          salary: number | null
           updated_at: string
         }
         Insert: {
@@ -29,8 +31,10 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          hours_per_month?: number | null
           id?: string
           name: string
+          salary?: number | null
           updated_at?: string
         }
         Update: {
@@ -38,8 +42,10 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          hours_per_month?: number | null
           id?: string
           name?: string
+          salary?: number | null
           updated_at?: string
         }
         Relationships: []
