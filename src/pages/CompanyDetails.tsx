@@ -179,7 +179,7 @@ const CompanyDetails = () => {
               </CardContent>
             </Card>
 
-            {(company.salary || calculatedHours > 0 || company.hours_per_month) && (
+            {(company.salary || calculatedHours > 0) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -188,7 +188,7 @@ const CompanyDetails = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {company.salary && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-primary">
@@ -198,38 +198,28 @@ const CompanyDetails = () => {
                       </div>
                     )}
 
-                    {company.hours_per_month && (
-                      <div className="text-center p-4 bg-muted/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
-                          <Clock className="h-5 w-5" />
-                          {company.hours_per_month}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Expected Hours Per Month</div>
-                      </div>
-                    )}
-
                     {calculatedHours > 0 && (
                       <div className="text-center p-4 bg-muted/50 rounded-lg">
                         <div className="text-2xl font-bold text-secondary flex items-center justify-center gap-1">
                           <Clock className="h-5 w-5" />
                           {calculatedHours}
                         </div>
-                        <div className="text-sm text-muted-foreground">Calculated Hours</div>
+                        <div className="text-sm text-muted-foreground">Total Worked Hours</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          From Tickets (2hrs/ticket)
+                          From Closed Tickets (2hrs/ticket)
                         </div>
                       </div>
                     )}
 
-                    {company.salary && company.hours_per_month && (
+                    {company.salary && calculatedHours > 0 && (
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20 col-span-full">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          JOD {(company.salary / company.hours_per_month).toFixed(2)} /hour
+                          JOD {(company.salary / calculatedHours).toFixed(2)} /hour
                         </div>
-                        <div className="text-sm text-muted-foreground">Cost Impact</div>
+                        <div className="text-sm text-muted-foreground">Cost Impact (Based on Actual Work)</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          JOD {company.salary.toLocaleString("en-JO")} ÷ {company.hours_per_month} hours
+                          JOD {company.salary.toLocaleString("en-JO")} ÷ {calculatedHours} hours worked
                         </div>
                       </div>
                     )}

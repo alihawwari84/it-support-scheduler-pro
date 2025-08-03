@@ -9,7 +9,6 @@ interface Company {
   contact_phone?: string;
   address?: string;
   salary?: number;
-  hours_per_month?: number;
   notes?: string;
   created_at: string;
   updated_at: string;

@@ -17,7 +17,6 @@ interface CompanyFormData {
   contact_phone: string;
   address: string;
   salary?: number;
-  hours_per_month?: number;
   notes?: string;
 }
 
@@ -27,6 +26,7 @@ const CompanyForm = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { companies, loading, createCompany, updateCompany } = useCompanies();
+  const { tickets } = useTickets();
   
   const isEditing = Boolean(id);
   const prefilledName = searchParams.get('name') || '';
@@ -37,9 +37,13 @@ const CompanyForm = () => {
     contact_phone: "",
     address: "",
     salary: undefined,
-    hours_per_month: undefined,
     notes: ""
   });
+
+  // Calculate total hours from tickets for this company (using ticket duration)
+  const companyTicketHours = id ? tickets
+    .filter(ticket => ticket.company_id === id && ticket.status === 'closed')
+    .length * 2 : 0; // Assuming 2 hours per closed ticket as default
 
   // Load existing company data if editing
   useEffect(() => {
@@ -52,7 +56,6 @@ const CompanyForm = () => {
           contact_phone: company.contact_phone || "",
           address: company.address || "",
           salary: company.salary,
-          hours_per_month: company.hours_per_month,
           notes: company.notes || ""
         });
       }
@@ -187,47 +190,31 @@ const CompanyForm = () => {
                   <DollarSign className="h-5 w-5" />
                   Financial Information (Optional)
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="salary">Monthly Salary (JOD)</Label>
-                    <Input
-                      id="salary"
-                      type="number"
-                      placeholder="0"
-                      value={formData.salary || ""}
-                      onChange={(e) => handleInputChange("salary", e.target.value ? parseFloat(e.target.value) : undefined)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Monthly salary cost for this company's support
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="hours_per_month">Hours Per Month</Label>
-                    <Input
-                      id="hours_per_month"
-                      type="number"
-                      placeholder="0"
-                      value={formData.hours_per_month || ""}
-                      onChange={(e) => handleInputChange("hours_per_month", e.target.value ? parseFloat(e.target.value) : undefined)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Expected hours of support per month
-                    </p>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salary">Monthly Salary (JOD)</Label>
+                  <Input
+                    id="salary"
+                    type="number"
+                    placeholder="0"
+                    value={formData.salary || ""}
+                    onChange={(e) => handleInputChange("salary", e.target.value ? parseFloat(e.target.value) : undefined)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Monthly salary cost for this company's support
+                  </p>
                 </div>
 
-                {/* Cost Impact Calculation */}
-                {formData.salary && formData.hours_per_month && formData.hours_per_month > 0 && (
+                {/* Cost Impact Calculation based on actual ticket hours */}
+                {formData.salary && companyTicketHours > 0 && isEditing && (
                   <div className="mt-4 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                         <Calculator className="h-5 w-5" />
-                        JOD {(formData.salary / formData.hours_per_month).toFixed(2)} /hour
+                        JOD {(formData.salary / companyTicketHours).toFixed(2)} /hour
                       </div>
-                      <div className="text-sm text-muted-foreground">Cost Impact</div>
+                      <div className="text-sm text-muted-foreground">Cost Impact (Based on Closed Tickets)</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        JOD {formData.salary.toLocaleString("en-JO")} ÷ {formData.hours_per_month} hours
+                        JOD {formData.salary.toLocaleString("en-JO")} ÷ {companyTicketHours} hours worked
                       </div>
                     </div>
                   </div>
