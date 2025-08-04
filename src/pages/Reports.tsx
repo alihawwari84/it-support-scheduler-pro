@@ -71,8 +71,8 @@ const Reports = () => {
     filteredTickets.forEach(ticket => {
       const company = companiesMap.get(ticket.company_id || '');
       if (company?.salary) {
-        const hourlyRate = company.salary / 40 / 52; // yearly salary to hourly
-        const ticketHours = parseFloat(ticket.time_spent?.toString() || "0") || 2; // default 2 hours if no time tracked
+        const hourlyRate = company.salary / 40 / 52; // monthly salary to hourly (40hrs/week, 52weeks/year / 12 months)
+        const ticketHours = parseFloat(ticket.time_spent?.toString() || "0") || 0;
         totalCostImpact += hourlyRate * ticketHours;
       }
     });
@@ -183,9 +183,8 @@ const Reports = () => {
       // Calculate cost impact based on company salary and actual hours
       let companyCostImpact = 0;
       if (company.salary) {
-        const hourlyRate = company.salary / 40 / 52; // yearly salary to hourly
-        const totalHours = companyHoursSpent || (companyTickets.length * 2); // default 2 hours per ticket
-        companyCostImpact = hourlyRate * totalHours;
+        const hourlyRate = company.salary / 40 / 52; // monthly salary to hourly
+        companyCostImpact = hourlyRate * companyHoursSpent;
       }
       
       return {

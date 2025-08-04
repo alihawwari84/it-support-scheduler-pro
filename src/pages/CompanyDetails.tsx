@@ -30,8 +30,10 @@ const CompanyDetails = () => {
 
   const calculateHoursFromTickets = (companyId: string) => {
     const companyTickets = tickets.filter(ticket => ticket.company_id === companyId);
-    // For now, we'll estimate 2 hours per ticket as we don't have estimated time field
-    return companyTickets.length * 2;
+    // Use actual tracked time instead of estimated
+    return companyTickets.reduce((sum, ticket) => {
+      return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
+    }, 0);
   };
 
   useEffect(() => {
@@ -206,7 +208,7 @@ const CompanyDetails = () => {
                         </div>
                         <div className="text-sm text-muted-foreground">Total Worked Hours</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          From Closed Tickets (2hrs/ticket)
+                          From Actual Tracked Time
                         </div>
                       </div>
                     )}
@@ -215,11 +217,11 @@ const CompanyDetails = () => {
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20 col-span-full">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          JOD {(company.salary / calculatedHours).toFixed(2)} /hour
+                          JOD {(calculatedHours * (company.salary / 40 / 52)).toFixed(2)}
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact (Based on Actual Work)</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          JOD {company.salary.toLocaleString("en-JO")} ÷ {calculatedHours} hours worked
+                          {calculatedHours} hours × JOD {(company.salary / 40 / 52).toFixed(2)}/hour
                         </div>
                       </div>
                     )}
