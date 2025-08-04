@@ -186,11 +186,11 @@ const Reports = () => {
       
       // Calculate cost impact: salary ÷ total resolved hours for this company
       let companyCostImpact = 0;
-      if (company.salary && companyHoursSpent > 0) {
+      if (company.salary) {
         const resolvedTickets = companyTickets.filter(t => t.status === 'resolved');
         const resolvedHours = resolvedTickets.reduce((sum, ticket) => sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0), 0);
         if (resolvedHours > 0) {
-          companyCostImpact = company.salary / resolvedHours * companyHoursSpent;
+          companyCostImpact = company.salary / resolvedHours; // Cost per hour rate
         }
       }
       
@@ -202,7 +202,7 @@ const Reports = () => {
         hoursSpent: Math.round(companyHoursSpent * 10) / 10,
         avgResolutionTime: companyAvgResolution > 0 ? (Math.round(companyAvgResolution * 10) / 10).toString() : "N/A",
         satisfaction: Math.floor(Math.random() * 20) + 80, // This would come from customer feedback
-        costImpact: Math.round(companyCostImpact)
+        costImpact: companyCostImpact > 0 ? Math.round(companyCostImpact * 100) / 100 : 0
       };
     });
 
@@ -472,7 +472,7 @@ const Reports = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        ${company.costImpact.toLocaleString()}
+                        JOD {company.costImpact}/hour
                       </Badge>
                     </TableCell>
                   </TableRow>
