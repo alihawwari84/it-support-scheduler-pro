@@ -126,6 +126,7 @@ export type Database = {
           reporter_name: string | null
           resolved_at: string | null
           status: string
+          time_spent: number | null
           title: string
           updated_at: string
         }
@@ -142,6 +143,7 @@ export type Database = {
           reporter_name?: string | null
           resolved_at?: string | null
           status?: string
+          time_spent?: number | null
           title: string
           updated_at?: string
         }
@@ -158,6 +160,7 @@ export type Database = {
           reporter_name?: string | null
           resolved_at?: string | null
           status?: string
+          time_spent?: number | null
           title?: string
           updated_at?: string
         }

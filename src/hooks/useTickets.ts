@@ -15,6 +15,7 @@ interface Ticket {
   reporter_email?: string;
   due_date?: string;
   resolved_at?: string;
+  time_spent?: number;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +27,7 @@ interface TicketWithCompany extends Ticket {
   ticket_categories?: {
     name: string;
   };
+  time_spent?: number;
 }
 
 export const useTickets = () => {

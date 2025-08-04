@@ -20,6 +20,7 @@ const Tickets = () => {
   const [companyFilter, setCompanyFilter] = useState("all");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [updateStatus, setUpdateStatus] = useState("");
+  const [timeSpent, setTimeSpent] = useState("");
   const { toast } = useToast();
 
   const { tickets, loading: ticketsLoading, updateTicket } = useTickets();
@@ -60,15 +61,20 @@ const Tickets = () => {
   const handleUpdateTicket = (ticket: any) => {
     setSelectedTicket(ticket);
     setUpdateStatus(ticket.status);
+    setTimeSpent(ticket.time_spent?.toString() || "0");
   };
 
   const saveTicketUpdate = async () => {
     if (!selectedTicket) return;
 
     try {
-      await updateTicket(selectedTicket.id, { status: updateStatus });
+      await updateTicket(selectedTicket.id, { 
+        status: updateStatus,
+        time_spent: parseFloat(timeSpent) || 0
+      });
       setSelectedTicket(null);
       setUpdateStatus("");
+      setTimeSpent("");
     } catch (error) {
       // Error handling is done in the hook
       console.error('Failed to update ticket:', error);
@@ -226,6 +232,17 @@ const Tickets = () => {
                                     <SelectItem value="closed">Closed</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Time Spent (hours)</label>
+                                <Input
+                                  type="number"
+                                  step="0.5"
+                                  min="0"
+                                  value={timeSpent}
+                                  onChange={(e) => setTimeSpent(e.target.value)}
+                                  placeholder="Enter hours spent on this ticket"
+                                />
                               </div>
                               <div className="flex gap-2 pt-4">
                                 <Button onClick={saveTicketUpdate} className="flex-1">

@@ -44,19 +44,48 @@ const Reports = () => {
       }
     });
 
-    // Calculate stats
+    // Calculate stats based on actual data
     const resolvedTickets = filteredTickets.filter(t => t.status === 'resolved').length;
     const pendingTickets = filteredTickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
+    
+    // Calculate actual hours spent
+    const totalHoursSpent = filteredTickets.reduce((sum, ticket) => {
+      return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
+    }, 0);
+    
+    // Calculate average resolution time for resolved tickets
+    const resolvedTicketsWithTime = filteredTickets.filter(t => t.status === 'resolved' && t.resolved_at);
+    const avgResolutionHours = resolvedTicketsWithTime.length > 0 
+      ? resolvedTicketsWithTime.reduce((sum, ticket) => {
+          const created = new Date(ticket.created_at);
+          const resolved = new Date(ticket.resolved_at!);
+          const hours = (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
+          return sum + hours;
+        }, 0) / resolvedTicketsWithTime.length
+      : 0;
+    
+    // Find companies for cost calculation
+    const companiesMap = new Map(companies.map(c => [c.id, c]));
+    let totalCostImpact = 0;
+    
+    filteredTickets.forEach(ticket => {
+      const company = companiesMap.get(ticket.company_id || '');
+      if (company?.salary) {
+        const hourlyRate = company.salary / 40 / 52; // yearly salary to hourly
+        const ticketHours = parseFloat(ticket.time_spent?.toString() || "0") || 2; // default 2 hours if no time tracked
+        totalCostImpact += hourlyRate * ticketHours;
+      }
+    });
     
     const stats = {
       totalTickets: filteredTickets.length,
       resolvedTickets,
       pendingTickets,
-      totalHoursSpent: Math.floor(filteredTickets.length * 2.5),
-      avgResolutionTime: resolvedTickets > 0 ? "2.4 hours" : "N/A",
-      satisfaction: "91%",
-      costPerTicket: "$45",
-      totalCost: `$${(filteredTickets.length * 45).toLocaleString()}`
+      totalHoursSpent: Math.round(totalHoursSpent * 10) / 10,
+      avgResolutionTime: avgResolutionHours > 0 ? `${Math.round(avgResolutionHours * 10) / 10} hours` : "N/A",
+      satisfaction: "91%", // This would come from customer feedback surveys
+      costPerTicket: totalCostImpact > 0 ? `$${Math.round(totalCostImpact / filteredTickets.length)}` : "$0",
+      totalCost: `$${Math.round(totalCostImpact).toLocaleString()}`
     };
 
     // Generate weekly data
@@ -69,10 +98,14 @@ const Reports = () => {
         return ticketDate >= weekStart && ticketDate < subDays(weekStart, -7);
       });
       
+      const weekHours = weekTickets.reduce((sum, ticket) => {
+        return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
+      }, 0);
+      
       return {
         week: `Week ${index + 1}`,
         tickets: weekTickets.length,
-        hoursSpent: weekTickets.length * 2,
+        hoursSpent: Math.round(weekHours * 10) / 10,
         resolved: weekTickets.filter(t => t.status === 'resolved').length,
         pending: weekTickets.filter(t => t.status !== 'resolved').length
       };
@@ -88,13 +121,27 @@ const Reports = () => {
         return ticketDate >= startOfMonth(month) && ticketDate <= endOfMonth(month);
       });
       
+      const monthHours = monthTickets.reduce((sum, ticket) => {
+        return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
+      }, 0);
+      
+      const monthResolved = monthTickets.filter(t => t.status === 'resolved' && t.resolved_at);
+      const monthAvgResolution = monthResolved.length > 0 
+        ? monthResolved.reduce((sum, ticket) => {
+            const created = new Date(ticket.created_at);
+            const resolved = new Date(ticket.resolved_at!);
+            const hours = (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
+            return sum + hours;
+          }, 0) / monthResolved.length
+        : 0;
+      
       return {
         month: format(month, 'MMM'),
         tickets: monthTickets.length,
-        hoursSpent: monthTickets.length * 2.5,
+        hoursSpent: Math.round(monthHours * 10) / 10,
         resolved: monthTickets.filter(t => t.status === 'resolved').length,
         pending: monthTickets.filter(t => t.status !== 'resolved').length,
-        avgResolutionTime: 2.4
+        avgResolutionTime: Math.round(monthAvgResolution * 10) / 10
       };
     });
 
@@ -111,21 +158,45 @@ const Reports = () => {
       };
     });
 
-    // Generate company stats
+    // Generate company stats with actual data
     const companiesWithStats = companies.map(company => {
       const companyTickets = filteredTickets.filter(t => t.company_id === company.id);
       const resolved = companyTickets.filter(t => t.status === 'resolved').length;
       const pending = companyTickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
+      
+      // Calculate actual hours spent for this company
+      const companyHoursSpent = companyTickets.reduce((sum, ticket) => {
+        return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
+      }, 0);
+      
+      // Calculate average resolution time for this company
+      const companyResolvedWithTime = companyTickets.filter(t => t.status === 'resolved' && t.resolved_at);
+      const companyAvgResolution = companyResolvedWithTime.length > 0 
+        ? companyResolvedWithTime.reduce((sum, ticket) => {
+            const created = new Date(ticket.created_at);
+            const resolved = new Date(ticket.resolved_at!);
+            const hours = (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
+            return sum + hours;
+          }, 0) / companyResolvedWithTime.length
+        : 0;
+      
+      // Calculate cost impact based on company salary and actual hours
+      let companyCostImpact = 0;
+      if (company.salary) {
+        const hourlyRate = company.salary / 40 / 52; // yearly salary to hourly
+        const totalHours = companyHoursSpent || (companyTickets.length * 2); // default 2 hours per ticket
+        companyCostImpact = hourlyRate * totalHours;
+      }
       
       return {
         name: company.name,
         tickets: companyTickets.length,
         resolved,
         pending,
-        hoursSpent: Math.floor(companyTickets.length * 2.3),
-        avgResolutionTime: (Math.random() * 2 + 1.5).toFixed(1),
-        satisfaction: Math.floor(Math.random() * 20) + 80,
-        costImpact: companyTickets.length * 45
+        hoursSpent: Math.round(companyHoursSpent * 10) / 10,
+        avgResolutionTime: companyAvgResolution > 0 ? (Math.round(companyAvgResolution * 10) / 10).toString() : "N/A",
+        satisfaction: Math.floor(Math.random() * 20) + 80, // This would come from customer feedback
+        costImpact: Math.round(companyCostImpact)
       };
     });
 
