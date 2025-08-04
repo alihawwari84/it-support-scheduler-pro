@@ -70,10 +70,14 @@ const Reports = () => {
     
     filteredTickets.forEach(ticket => {
       const company = companiesMap.get(ticket.company_id || '');
-      if (company?.salary) {
-        const hourlyRate = company.salary / 40 / 52; // monthly salary to hourly (40hrs/week, 52weeks/year / 12 months)
-        const ticketHours = parseFloat(ticket.time_spent?.toString() || "0") || 0;
-        totalCostImpact += hourlyRate * ticketHours;
+      if (company?.salary && ticket.status === 'resolved') {
+        const companyResolvedTickets = filteredTickets.filter(t => t.company_id === company.id && t.status === 'resolved');
+        const totalResolvedHours = companyResolvedTickets.reduce((sum, t) => sum + (parseFloat(t.time_spent?.toString() || "0") || 0), 0);
+        if (totalResolvedHours > 0) {
+          const costPerHour = company.salary / totalResolvedHours;
+          const ticketHours = parseFloat(ticket.time_spent?.toString() || "0") || 0;
+          totalCostImpact += costPerHour * ticketHours;
+        }
       }
     });
     
@@ -180,11 +184,14 @@ const Reports = () => {
           }, 0) / companyResolvedWithTime.length
         : 0;
       
-      // Calculate cost impact based on company salary and actual hours
+      // Calculate cost impact: salary ÷ total resolved hours for this company
       let companyCostImpact = 0;
-      if (company.salary) {
-        const hourlyRate = company.salary / 40 / 52; // monthly salary to hourly
-        companyCostImpact = hourlyRate * companyHoursSpent;
+      if (company.salary && companyHoursSpent > 0) {
+        const resolvedTickets = companyTickets.filter(t => t.status === 'resolved');
+        const resolvedHours = resolvedTickets.reduce((sum, ticket) => sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0), 0);
+        if (resolvedHours > 0) {
+          companyCostImpact = company.salary / resolvedHours * companyHoursSpent;
+        }
       }
       
       return {

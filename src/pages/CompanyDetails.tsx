@@ -30,8 +30,9 @@ const CompanyDetails = () => {
 
   const calculateHoursFromTickets = (companyId: string) => {
     const companyTickets = tickets.filter(ticket => ticket.company_id === companyId);
-    // Use actual tracked time instead of estimated
-    return companyTickets.reduce((sum, ticket) => {
+    // Use actual tracked time from resolved tickets only
+    const resolvedTickets = companyTickets.filter(ticket => ticket.status === 'resolved');
+    return resolvedTickets.reduce((sum, ticket) => {
       return sum + (parseFloat(ticket.time_spent?.toString() || "0") || 0);
     }, 0);
   };
@@ -206,7 +207,7 @@ const CompanyDetails = () => {
                           <Clock className="h-5 w-5" />
                           {calculatedHours}
                         </div>
-                        <div className="text-sm text-muted-foreground">Total Worked Hours</div>
+                        <div className="text-sm text-muted-foreground">Hours on Resolved Tickets</div>
                         <div className="text-xs text-muted-foreground mt-1">
                           From Actual Tracked Time
                         </div>
@@ -217,11 +218,11 @@ const CompanyDetails = () => {
                       <div className="text-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20 col-span-full">
                         <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                           <Calculator className="h-5 w-5" />
-                          JOD {(calculatedHours * (company.salary / 40 / 52)).toFixed(2)}
+                          JOD {(company.salary / calculatedHours).toFixed(2)}
                         </div>
                         <div className="text-sm text-muted-foreground">Cost Impact (Based on Actual Work)</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {calculatedHours} hours × JOD {(company.salary / 40 / 52).toFixed(2)}/hour
+                          JOD {company.salary.toLocaleString("en-JO")} ÷ {calculatedHours} hours on resolved tickets
                         </div>
                       </div>
                     )}
