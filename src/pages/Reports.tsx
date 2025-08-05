@@ -4,17 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Download, TrendingUp, Clock, Users, FileText, BarChart3, PieChart, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon, Download, TrendingUp, Clock, Users, FileText, BarChart3, PieChart, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { useTickets } from "@/hooks/useTickets";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useTicketCategories } from "@/hooks/useTicketCategories";
 import { format, subDays, subMonths, eachWeekOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 const Reports = () => {
   const [timeRange, setTimeRange] = useState("last-30-days");
   const [selectedCompany, setSelectedCompany] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateTo, setDateTo] = useState<Date>();
+  const [useCustomDateRange, setUseCustomDateRange] = useState(false);
   
   const { tickets, loading: ticketsLoading } = useTickets();
   const { companies, loading: companiesLoading } = useCompanies();
@@ -35,6 +41,13 @@ const Reports = () => {
     // Filter tickets by time range
     const filteredTickets = tickets.filter(ticket => {
       const ticketDate = new Date(ticket.created_at);
+      
+      // If using custom date range, filter by custom dates
+      if (useCustomDateRange && dateFrom && dateTo) {
+        return ticketDate >= dateFrom && ticketDate <= dateTo;
+      }
+      
+      // Otherwise use predefined ranges
       switch (timeRange) {
         case "last-7-days": return ticketDate >= subDays(now, 7);
         case "last-30-days": return ticketDate >= subDays(now, 30);
@@ -207,7 +220,7 @@ const Reports = () => {
     });
 
     return { stats, weeklyData, monthlyData, ticketsByType, companiesWithStats };
-  }, [tickets, companies, categories, timeRange]);
+  }, [tickets, companies, categories, timeRange, useCustomDateRange, dateFrom, dateTo]);
 
   const filteredCompanyData = selectedCompany === "all" 
     ? reportData.companiesWithStats 
@@ -435,6 +448,80 @@ const Reports = () => {
           <CardHeader>
             <CardTitle>Company Performance Details</CardTitle>
             <CardDescription>Comprehensive metrics per company</CardDescription>
+            
+            {/* Date Filter for Company Performance */}
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="useCustomRange"
+                  checked={useCustomDateRange}
+                  onChange={(e) => setUseCustomDateRange(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="useCustomRange" className="text-sm font-medium">
+                  Use custom date range
+                </label>
+              </div>
+              
+              {useCustomDateRange && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">From:</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-[140px] justify-start text-left font-normal",
+                            !dateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateFrom ? format(dateFrom, "MMM dd") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">To:</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-[140px] justify-start text-left font-normal",
+                            !dateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateTo ? format(dateTo, "MMM dd") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={setDateTo}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
