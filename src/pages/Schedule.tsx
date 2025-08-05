@@ -88,7 +88,9 @@ const Schedule = () => {
               <Link to="/">
                 <Button variant="outline">Dashboard</Button>
               </Link>
-              <Button>Add Appointment</Button>
+              <Link to="/tickets/new">
+                <Button>Add Appointment</Button>
+              </Link>
             </div>
           </div>
         </div>
