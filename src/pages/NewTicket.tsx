@@ -34,6 +34,7 @@ const NewTicket = () => {
     reporterName: "",
     reporterEmail: "",
     dueDate: undefined as Date | undefined,
+    dueTime: "",
   });
 
   const priorities = ["low", "medium", "high"];
@@ -42,7 +43,7 @@ const NewTicket = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.companyId || !formData.title || !formData.description || !formData.priority) {
+    if (!formData.companyId || !formData.title || !formData.priority) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -53,16 +54,25 @@ const NewTicket = () => {
 
     try {
       // Create new ticket object
+      let dueDateTime = null;
+      if (formData.dueDate) {
+        dueDateTime = new Date(formData.dueDate);
+        if (formData.dueTime) {
+          const [hours, minutes] = formData.dueTime.split(':');
+          dueDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        }
+      }
+
       const ticketData = {
         company_id: formData.companyId,
         category_id: formData.categoryId || null,
         title: formData.title,
-        description: formData.description,
+        description: formData.description || null,
         priority: formData.priority,
         status: "open",
         reporter_name: formData.reporterName || null,
         reporter_email: formData.reporterEmail || null,
-        due_date: formData.dueDate ? formData.dueDate.toISOString() : null,
+        due_date: dueDateTime ? dueDateTime.toISOString() : null,
       };
 
       await createTicket(ticketData);
@@ -146,7 +156,7 @@ const NewTicket = () => {
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Detailed description of the issue and any error messages"
@@ -213,33 +223,54 @@ const NewTicket = () => {
                 </div>
               </div>
 
-              {/* Due Date */}
+              {/* Due Date and Time */}
               <div className="space-y-2">
                 <Label>Due Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.dueDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a due date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.dueDate}
-                      onSelect={(date) => handleInputChange("dueDate", date)}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal",
+                          !formData.dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a due date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <div className="p-3 space-y-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleInputChange("dueDate", new Date())}
+                          className="w-full"
+                        >
+                          Today
+                        </Button>
+                        <Calendar
+                          mode="single"
+                          selected={formData.dueDate}
+                          onSelect={(date) => handleInputChange("dueDate", date)}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <div className="flex-shrink-0 w-32">
+                    <Input
+                      type="time"
+                      value={formData.dueTime}
+                      onChange={(e) => handleInputChange("dueTime", e.target.value)}
+                      className="w-full"
+                      placeholder="Time"
                     />
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                </div>
               </div>
 
               {/* Submit Button */}
