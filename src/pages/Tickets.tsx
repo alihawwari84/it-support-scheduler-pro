@@ -203,7 +203,9 @@ const Tickets = () => {
                         Created: {format(new Date(ticket.created_at), 'MMM dd, yyyy HH:mm')}
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">View</Button>
+                        <Link to={`/tickets/${ticket.id}`}>
+                          <Button variant="outline" size="sm">View</Button>
+                        </Link>
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button size="sm" onClick={() => handleUpdateTicket(ticket)}>
