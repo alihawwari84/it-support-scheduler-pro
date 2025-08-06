@@ -568,6 +568,84 @@ const Reports = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* All Tickets Report */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              All Tickets Report
+            </CardTitle>
+            <CardDescription>Complete ticket listing filtered by company</CardDescription>
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <label className="text-sm font-medium">Filter by Company:</label>
+              </div>
+              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                <SelectTrigger className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Companies</SelectItem>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.name}>{company.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Issue Title</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Reporter Name</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Company</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tickets
+                  .filter(ticket => {
+                    if (selectedCompany === "all") return true;
+                    return ticket.companies?.name === selectedCompany;
+                  })
+                  .map((ticket) => (
+                    <TableRow key={ticket.id}>
+                      <TableCell className="font-medium">{ticket.title}</TableCell>
+                      <TableCell>
+                        {ticket.ticket_categories?.name ? (
+                          <Badge variant="outline">{ticket.ticket_categories.name}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">No category</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{ticket.reporter_name || 'Anonymous'}</TableCell>
+                      <TableCell>{format(new Date(ticket.created_at), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            ticket.status === 'resolved' 
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : ticket.status === 'in_progress'
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }
+                        >
+                          {ticket.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{ticket.companies?.name || 'No company'}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
