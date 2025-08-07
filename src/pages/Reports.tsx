@@ -14,6 +14,8 @@ import { useCompanies } from "@/hooks/useCompanies";
 import { useTicketCategories } from "@/hooks/useTicketCategories";
 import { format, subDays, subMonths, eachWeekOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Reports = () => {
   const [timeRange, setTimeRange] = useState("last-30-days");
@@ -241,6 +243,39 @@ const Reports = () => {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+  };
+
+  const exportAllTicketsPdf = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.setFontSize(14);
+    doc.text('All Tickets Report', 40, 40);
+    doc.setFontSize(10);
+    doc.text(
+      `Company: ${selectedCompany === 'all' ? 'All' : selectedCompany} • Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
+      40,
+      60
+    );
+
+    const rows = tickets
+      .filter(ticket => (selectedCompany === 'all' ? true : ticket.companies?.name === selectedCompany))
+      .map(ticket => [
+        ticket.title,
+        ticket.ticket_categories?.name || 'No category',
+        ticket.reporter_name || 'Anonymous',
+        format(new Date(ticket.created_at), 'yyyy-MM-dd'),
+        ticket.status.replace('_', ' '),
+        ticket.companies?.name || 'No company'
+      ]);
+
+    autoTable(doc, {
+      head: [['Issue Title', 'Category', 'Reporter Name', 'Date', 'Status', 'Company']],
+      body: rows,
+      startY: 80,
+      styles: { fontSize: 9, cellPadding: 6 },
+      headStyles: { fillColor: [66, 66, 66], textColor: 255 },
+    });
+
+    doc.save(`all_tickets_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   if (ticketsLoading || companiesLoading) {
@@ -577,22 +612,28 @@ const Reports = () => {
               All Tickets Report
             </CardTitle>
             <CardDescription>Complete ticket listing filtered by company</CardDescription>
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <label className="text-sm font-medium">Filter by Company:</label>
+            <div className="flex items-center justify-between gap-4 mt-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <label className="text-sm font-medium">Filter by Company:</label>
+                </div>
+                <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Companies</SelectItem>
+                    {companies.map(company => (
+                      <SelectItem key={company.id} value={company.name}>{company.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                <SelectTrigger className="w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Companies</SelectItem>
-                  {companies.map(company => (
-                    <SelectItem key={company.id} value={company.name}>{company.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button variant="outline" onClick={exportAllTicketsPdf}>
+                <Download className="h-4 w-4 mr-2" />
+                Export PDF
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
